@@ -33,6 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user_accounts', [UserAccountController::class, 'index']);
     Route::get('/user_accounts/{id}', [UserAccountController::class, 'show']);
     Route::get('/user/tasks', [UserAccountController::class, 'getUserTasks']);
+    Route::post('/user/tasks', [TaskController::class, 'store']); // ここを追加
 });
 
 // タスク関連のルート

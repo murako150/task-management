@@ -25,11 +25,14 @@ function UserDashboard() {
   const [progressData, setProgressData] = useState({ pending: 0, in_progress: 0, completed: 0 });
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
-  const [newTask, setNewTask] = useState({ title: '', due_date: '', status: 'pending' });
+  const [newTask, setNewTask] = useState({ title: '', due_date: '', status: 'pending', assigned_user_id: '', project_id: '' });
   const [comment, setComment] = useState('');
   const [comments, setComments] = useState([]);
+  const [projects, setProjects] = useState([]); // プロジェクト情報
+  const [users, setUsers] = useState([]); // ユーザー情報
   const [notification, setNotification] = useState('');
 
+  // タスクの取得
   const fetchTasks = async () => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
@@ -51,6 +54,37 @@ function UserDashboard() {
     }
   };
 
+  // プロジェクトの取得
+  const fetchProjects = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const response = await axios.get('http://localhost:33001/api/projects', {
+        headers: {
+          Authorization: `Bearer ${user.access_token}`,
+        },
+      });
+      setProjects(response.data);
+    } catch (error) {
+      console.error('プロジェクト取得エラー:', error);
+    }
+  };
+
+  // 特定のプロジェクトに関連するユーザーの取得
+  const fetchUsers = async (projectId) => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const response = await axios.get(`http://localhost:33001/api/projects/${projectId}/users`, {
+        headers: {
+          Authorization: `Bearer ${user.access_token}`,
+        },
+      });
+      setUsers(response.data); // プロジェクトに関連するユーザーのみを取得
+    } catch (error) {
+      console.error('ユーザー取得エラー:', error);
+    }
+  };
+
+  // コメントを取得する関数
   const fetchComments = async (taskId) => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
@@ -67,6 +101,7 @@ function UserDashboard() {
 
   useEffect(() => {
     fetchTasks();
+    fetchProjects(); // 初回レンダー時にプロジェクトを取得
   }, []);
 
   useEffect(() => {
@@ -97,10 +132,15 @@ function UserDashboard() {
   };
 
   const handleOpenModal = (task) => {
-    setSelectedTask(task);
-    setModalOpen(true);
-    setComment('');
-    fetchComments(task.id);
+    if (task) {
+      setSelectedTask(task);
+      setModalOpen(true);
+      setComment('');
+      fetchComments(task.id);
+    } else {
+      setSelectedTask(null);
+      setModalOpen(true);
+    }
   };
 
   const handleCloseModal = () => {
@@ -111,20 +151,29 @@ function UserDashboard() {
 
   const handleChangeNewTask = (e) => {
     setNewTask({ ...newTask, [e.target.name]: e.target.value });
+    if (e.target.name === 'project_id') {
+      fetchUsers(e.target.value); // プロジェクト選択時に対応するユーザーを取得
+    }
   };
 
   const handleAddTask = async () => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
-      await axios.post('http://localhost:33001/api/user/tasks', newTask, {
+      const userToken = user.access_token;
+      const taskData = {
+        ...newTask,
+        assigned_to: newTask.assigned_user_id, // 修正: ユーザーIDをタスクに反映
+      };
+
+      await axios.post('http://localhost:33001/api/user/tasks', taskData, {
         headers: {
-          Authorization: `Bearer ${user.access_token}`,
+          Authorization: `Bearer ${userToken}`,
         },
       });
-      setNewTask({ title: '', due_date: '', status: 'pending' });
+      setNewTask({ title: '', due_date: '', status: 'pending', assigned_user_id: '', project_id: '' });
       handleCloseModal();
       fetchTasks();
-      setNotification('タスクが追加されました！'); // 通知メッセージ
+      setNotification('タスクが追加されました！');
     } catch (error) {
       console.error('タスク追加エラー:', error);
     }
@@ -161,7 +210,7 @@ function UserDashboard() {
       );
       setComment('');
       fetchComments(selectedTask.id);
-      setNotification('コメントが追加されました！'); // 通知メッセージ
+      setNotification('コメントが追加されました！');
     } catch (error) {
       console.error('コメント追加エラー:', error.response ? error.response.data : error.message);
     }
@@ -254,6 +303,43 @@ function UserDashboard() {
               <Typography variant="h6" gutterBottom>新しいタスクを追加</Typography>
               <TextField label="タスク名" name="title" value={newTask.title} onChange={handleChangeNewTask} fullWidth />
               <TextField label="期限" name="due_date" type="date" value={newTask.due_date} onChange={handleChangeNewTask} fullWidth InputLabelProps={{ shrink: true }} />
+
+              {/* プロジェクトの選択 */}
+              <TextField
+                select
+                label="プロジェクト"
+                name="project_id"
+                value={newTask.project_id}
+                onChange={handleChangeNewTask}
+                fullWidth
+                required
+              >
+                <MenuItem value=""><em>プロジェクトを選択</em></MenuItem>
+                {projects.map((project) => (
+                  <MenuItem key={project.id} value={project.id}>
+                    {project.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              {/* 割り当てるユーザーの選択 */}
+              <TextField
+                select
+                label="担当者"
+                name="assigned_user_id"
+                value={newTask.assigned_user_id}
+                onChange={handleChangeNewTask}
+                fullWidth
+                required
+              >
+                <MenuItem value=""><em>ユーザーを選択</em></MenuItem>
+                {users.map((user) => (
+                  <MenuItem key={user.id} value={user.id}>
+                    {user.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+
               <Button variant="contained" color="primary" onClick={handleAddTask}>追加</Button>
             </>
           )}
