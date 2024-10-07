@@ -19,14 +19,14 @@ function AdminDashboard() {
   const [projects, setProjects] = useState([]);
 
   useEffect(() => {
-    fetchData(); // データを初期取得
+    fetchData(); // タスクとユーザーを取得
     fetchProjects(); // プロジェクトを取得
   }, []);
 
   const fetchData = async () => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
-      
+
       const tasksResponse = await axios.get('http://localhost:33001/api/tasks', {
         headers: {
           Authorization: `Bearer ${user.access_token}`,
@@ -59,6 +59,11 @@ function AdminDashboard() {
     }
   };
 
+  const getProjectName = (projectId) => {
+    const project = projects.find((project) => project.id === projectId);
+    return project ? project.name : '不明';
+  };
+
   return (
     <Container>
       <Typography variant="h4" gutterBottom>管理者ダッシュボード</Typography>
@@ -74,6 +79,7 @@ function AdminDashboard() {
               <TableCell>タスク名</TableCell>
               <TableCell>担当者</TableCell>
               <TableCell>ステータス</TableCell>
+              <TableCell>プロジェクト名</TableCell> {/* 追加 */}
               <TableCell>期限</TableCell>
             </TableRow>
           </TableHead>
@@ -83,6 +89,7 @@ function AdminDashboard() {
                 <TableCell>{task.title}</TableCell>
                 <TableCell>{task.assigned_to ? users.find(user => user.id === task.assigned_to)?.name : '不明'}</TableCell>
                 <TableCell>{task.status}</TableCell>
+                <TableCell>{getProjectName(task.project_id)}</TableCell> {/* プロジェクト名を表示 */}
                 <TableCell>{task.due_date}</TableCell>
               </TableRow>
             ))}
@@ -109,7 +116,7 @@ function AdminDashboard() {
               <TableRow key={user.id}>
                 <TableCell>{user.name}</TableCell>
                 <TableCell>{user.role}</TableCell>
-                <TableCell>{user.is_active ? 'アクティブ' : '非アクティブ'}</TableCell>
+                <TableCell>{user.active_flag ? 'アクティブ' : '非アクティブ'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -126,14 +133,12 @@ function AdminDashboard() {
           <TableHead>
             <TableRow>
               <TableCell>プロジェクト名</TableCell>
-              <TableCell>ステータス</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {projects.map((project) => (
               <TableRow key={project.id}>
                 <TableCell>{project.name}</TableCell>
-                <TableCell>{project.status}</TableCell>
               </TableRow>
             ))}
           </TableBody>

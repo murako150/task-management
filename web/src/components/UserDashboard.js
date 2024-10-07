@@ -41,7 +41,17 @@ function UserDashboard() {
           Authorization: `Bearer ${user.access_token}`,
         },
       });
-      setTasks(response.data);
+      const tasksWithProjects = await Promise.all(
+        response.data.map(async (task) => {
+          const projectResponse = await axios.get(`http://localhost:33001/api/projects/${task.project_id}`, {
+            headers: {
+              Authorization: `Bearer ${user.access_token}`,
+            },
+          });
+          return { ...task, project_name: projectResponse.data.name };
+        })
+      );
+      setTasks(tasksWithProjects);
 
       const progress = {
         pending: response.data.filter(task => task.status === 'pending').length,
@@ -150,24 +160,23 @@ function UserDashboard() {
   };
 
   const handleChangeNewTask = (e) => {
-    setNewTask({ ...newTask, [e.target.name]: e.target.value });
-    if (e.target.name === 'project_id') {
-      fetchUsers(e.target.value); // プロジェクト選択時に対応するユーザーを取得
+    const { name, value } = e.target;
+    setNewTask((prev) => ({ ...prev, [name]: value }));
+    if (name === 'project_id') {
+      fetchUsers(value); // プロジェクト選択時に対応するユーザーを取得
     }
   };
 
   const handleAddTask = async () => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
-      const userToken = user.access_token;
       const taskData = {
         ...newTask,
         assigned_to: newTask.assigned_user_id, // 修正: ユーザーIDをタスクに反映
       };
-
-      await axios.post('http://localhost:33001/api/user/tasks', taskData, {
+      await axios.post('http://localhost:33001/api/tasks', taskData, {
         headers: {
-          Authorization: `Bearer ${userToken}`,
+          Authorization: `Bearer ${user.access_token}`,
         },
       });
       setNewTask({ title: '', due_date: '', status: 'pending', assigned_user_id: '', project_id: '' });
@@ -238,14 +247,16 @@ function UserDashboard() {
           <TableHead>
             <TableRow>
               <TableCell>タスク名</TableCell>
+              <TableCell>プロジェクト名</TableCell> {/* プロジェクト名列を追加 */}
               <TableCell>期限</TableCell>
               <TableCell>ステータス</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {tasks.map((task) => (
-              <TableRow key={task.id} onClick={() => handleOpenModal(task)}>
+              <TableRow key={task.id} onClick={() => handleOpenModal(task)}> {/* クリックイベントを復元 */}
                 <TableCell>{task.title}</TableCell>
+                <TableCell>{task.project_name}</TableCell> {/* プロジェクト名を表示 */}
                 <TableCell>{task.due_date}</TableCell>
                 <TableCell>{task.status}</TableCell>
               </TableRow>
@@ -257,7 +268,7 @@ function UserDashboard() {
       {/* モーダル */}
       <Modal open={modalOpen} onClose={handleCloseModal}>
         <Box sx={{ padding: 2, backgroundColor: 'white', margin: 'auto', marginTop: '20%', maxWidth: 400 }}>
-          {selectedTask ? (
+        {selectedTask ? (
             <>
               <Typography variant="h6" gutterBottom>タスク詳細</Typography>
               <Typography>タスク名: {selectedTask.title}</Typography>
@@ -300,48 +311,48 @@ function UserDashboard() {
             </>
           ) : (
             <>
-              <Typography variant="h6" gutterBottom>新しいタスクを追加</Typography>
-              <TextField label="タスク名" name="title" value={newTask.title} onChange={handleChangeNewTask} fullWidth />
-              <TextField label="期限" name="due_date" type="date" value={newTask.due_date} onChange={handleChangeNewTask} fullWidth InputLabelProps={{ shrink: true }} />
+          <Typography variant="h6" gutterBottom>新しいタスクを追加</Typography>
+          <TextField label="タスク名" name="title" value={newTask.title} onChange={handleChangeNewTask} fullWidth />
+          <TextField label="期限" name="due_date" type="date" value={newTask.due_date} onChange={handleChangeNewTask} fullWidth InputLabelProps={{ shrink: true }} />
+          
+          {/* プロジェクトの選択 */}
+          <TextField
+            select
+            label="プロジェクト"
+            name="project_id"
+            value={newTask.project_id}
+            onChange={handleChangeNewTask}
+            fullWidth
+            required
+          >
+            <MenuItem value=""><em>プロジェクトを選択</em></MenuItem>
+            {projects.map((project) => (
+              <MenuItem key={project.id} value={project.id}>
+                {project.name}
+              </MenuItem>
+            ))}
+          </TextField>
 
-              {/* プロジェクトの選択 */}
-              <TextField
-                select
-                label="プロジェクト"
-                name="project_id"
-                value={newTask.project_id}
-                onChange={handleChangeNewTask}
-                fullWidth
-                required
-              >
-                <MenuItem value=""><em>プロジェクトを選択</em></MenuItem>
-                {projects.map((project) => (
-                  <MenuItem key={project.id} value={project.id}>
-                    {project.name}
-                  </MenuItem>
-                ))}
-              </TextField>
+          {/* 割り当てるユーザーの選択 */}
+          <TextField
+            select
+            label="担当者"
+            name="assigned_user_id"
+            value={newTask.assigned_user_id}
+            onChange={handleChangeNewTask}
+            fullWidth
+            required
+          >
+            <MenuItem value=""><em>担当者を選択</em></MenuItem>
+            {users.map((user) => (
+              <MenuItem key={user.id} value={user.id}>
+                {user.name}
+              </MenuItem>
+            ))}
+          </TextField>
 
-              {/* 割り当てるユーザーの選択 */}
-              <TextField
-                select
-                label="担当者"
-                name="assigned_user_id"
-                value={newTask.assigned_user_id}
-                onChange={handleChangeNewTask}
-                fullWidth
-                required
-              >
-                <MenuItem value=""><em>ユーザーを選択</em></MenuItem>
-                {users.map((user) => (
-                  <MenuItem key={user.id} value={user.id}>
-                    {user.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-
-              <Button variant="contained" color="primary" onClick={handleAddTask}>追加</Button>
-            </>
+          <Button variant="contained" color="primary" onClick={handleAddTask}>追加</Button>
+          </>
           )}
         </Box>
       </Modal>
