@@ -1,105 +1,70 @@
+// web/src/components/EditSelf.js
+
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Container, Typography, TextField, Button } from '@mui/material';
+import { TextField, Button, Typography, Container } from '@mui/material';
+import { apiService } from '../api';
 
-function EditSelf() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+const EditSelf = () => {
+    const [userData, setUserData] = useState({ name: '', email: '', password: '' });
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
+    useEffect(() => {
         const user = JSON.parse(localStorage.getItem('user'));
-        const response = await axios.get('http://localhost:33001/api/user', {
-          headers: {
-            Authorization: `Bearer ${user.access_token}`,
-          },
-        });
+        if (user) {
+            setUserData({ name: user.name, email: user.email });
+        }
+    }, []);
 
-        setName(response.data.name);
-        setEmail(response.data.email);
-      } catch (error) {
-        setError('ユーザー情報の取得に失敗しました。');
-        console.error('ユーザー情報の取得エラー:', error);
-      }
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setUserData({ ...userData, [name]: value });
     };
 
-    fetchUserData();
-  }, []);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const user = JSON.parse(localStorage.getItem('user'));
+            await apiService.put(`user/${user.user_id}`, userData);
+            alert('プロフィールが更新されました。');
+        } catch (error) {
+            console.error('更新エラー:', error);
+        }
+    };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-  
-    try {
-      const user = JSON.parse(localStorage.getItem('user'));
-      const updateData = {
-        name,
-        email,
-      };
-  
-      if (password) {
-        updateData.password = password;
-      }
-      const userId = user.id; 
-      await axios.put(`http://localhost:33001/api/user/${userId}`, updateData, {
-        headers: {
-          Authorization: `Bearer ${user.access_token}`,
-        },
-      });
-  
-      setSuccess('プロフィールが更新されました。');
-      setPassword('');
-    } catch (error) {
-      setError('プロフィールの更新に失敗しました。');
-    }
-  };
-
-  return (
-    <Container style={{ padding: '20px' }}>
-      <Typography variant="h5" gutterBottom>
-        プロフィール編集
-      </Typography>
-      {error && <Typography color="error">{error}</Typography>}
-      {success && <Typography color="primary">{success}</Typography>}
-      <form onSubmit={handleSubmit}>
-        <TextField
-          label="名前"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          fullWidth
-          margin="normal"
-        />
-        <TextField
-          label="メールアドレス"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          fullWidth
-          margin="normal"
-        />
-        <TextField
-          label="パスワード（変更する場合のみ）"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="新しいパスワードを入力"
-          fullWidth
-          margin="normal"
-        />
-        <Button type="submit" variant="contained" color="primary" fullWidth>
-          更新
-        </Button>
-      </form>
-    </Container>
-  );
-}
+    return (
+        <Container maxWidth="xs">
+            <Typography variant="h5" gutterBottom>プロフィール編集</Typography>
+            <form onSubmit={handleSubmit}>
+                <TextField
+                    label="名前"
+                    name="name"
+                    value={userData.name}
+                    onChange={handleChange}
+                    fullWidth
+                    margin="normal"
+                />
+                <TextField
+                    label="Email"
+                    name="email"
+                    value={userData.email}
+                    onChange={handleChange}
+                    fullWidth
+                    margin="normal"
+                />
+                <TextField
+                    label="新しいパスワード"
+                    name="password"
+                    type="password"
+                    value={userData.password}
+                    onChange={handleChange}
+                    fullWidth
+                    margin="normal"
+                />
+                <Button variant="contained" color="primary" type="submit">
+                    更新
+                </Button>
+            </form>
+        </Container>
+    );
+};
 
 export default EditSelf;

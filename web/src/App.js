@@ -1,76 +1,48 @@
-import React, { useState, useEffect } from 'react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import CommonHeader from './components/CommonHeader';
-import CommonFooter from './components/CommonFooter';
-import AddUser from './components/AddUser';
-import EditSelf from './components/EditSelf';
-import AdminDashboard from './components/AdminDashboard';
-import ClientDashboard from './components/ClientDashboard';
-import UserDashboard from './components/UserDashboard';
+// web/src/App.js
+
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
+import CommonHeader from './components/Common/CommonHeader';
+import CommonFooter from './components/Common/CommonFooter';
+import UserDashboardContainer from './components/Dashboard/UserDashboard/UserDashboardContainer';
+import AdminDashboardContainer from './components/Dashboard/AdminDashboard/AdminDashboardContainer';
+import ClientDashboardContainer from './components/Dashboard/ClientDashboard/ClientDashboardContainer';
+import ProjectList from './components/Project/ProjectList';
+import TaskList from './components/Task/TaskList';
+import UserList from './components/User/UserList';
+import TaskDetails from './components/Task/TaskDetails';
+import ProjectCreate from './components/Project/ProjectCreate';
+import ProjectDetails from './components/Project/ProjectDetails';
+import TaskCreate from './components/Task/TaskCreate';
 import Login from './components/Login';
-import ProjectList from './components/ProjectList';
-import ProjectDetails from './components/ProjectDetails';
-import ProjectCreate from './components/ProjectCreate'; 
-import AddUserToProject from './components/AddUserToProject'; 
-import TaskDetails from './components/TaskDetails';
-import TaskList from './components/TaskList';
-import TaskCreate from './components/TaskCreate';
-import UserList from './components/UserList';
-import EditProfile from './components/EditProfile';
+import EditSelf from './components/EditSelf';
+import { Container } from '@mui/material';
 
 function App() {
-  const [user, setUser] = useState(null);
-  const theme = createTheme({
-    palette: {
-      primary: {
-        main: '#1976d2',
-      },
-    },
-  });
-  
-  useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem('user'));
-    if (storedUser) {
-      setUser(storedUser);
-    }
-  }, []);
+    const user = JSON.parse(localStorage.getItem('user')); // ローカルストレージからユーザー情報を取得
 
-  const handleLogout = () => {
-    localStorage.removeItem('user'); // ローカルストレージからユーザー情報を削除
-    setUser(null); // 状態をnullに設定
-  };
-
-  return (
-    <ThemeProvider theme={theme}>
-      <Router>
-        <CommonHeader user={user} onLogout={handleLogout} />
-        <Routes>
-          <Route path="/projects" element={<ProjectList />} />
-          <Route path="/projects/:id" element={<ProjectDetails />} />
-          <Route path="/projects/add" element={user ? <ProjectCreate /> : <Navigate to="/login" />} />
-          <Route path="/projects/:projectId/add-user" element={<AddUserToProject />} />
-          <Route path="/login" element={<Login setUser={setUser} />} />
-          <Route path="/users" element={<UserList />} />
-          {user && (user.role === 'client' || user.role === 'admin') && (
-            <Route path="/add-user" element={<AddUser />} />
-          )}
-          {user && (user.role === 'user' || user.role === 'client' || user.role === 'admin') && (
-            <Route path="/edit-self" element={<EditSelf />} />
-          )}
-          <Route path="/edit-profile/:userId" element={<EditProfile />} />
-          <Route path="/tasks" element={<TaskList />} />
-          <Route path="/tasks/:id" element={<TaskDetails />} />
-          <Route path="/tasks/add" element={<TaskCreate />} />
-          <Route path="/admin-dashboard" element={user && user.role === 'admin' ? <AdminDashboard /> : <Navigate to="/login" />} />
-          <Route path="/client-dashboard" element={user && user.role === 'client' ? <ClientDashboard /> : <Navigate to="/login" />} />
-          <Route path="/user-dashboard" element={user && user.role === 'user' ? <UserDashboard /> : <Navigate to="/login" />} />
-          <Route path="*" element={<Navigate to="/login" />} />
-        </Routes>
-        <CommonFooter />
-      </Router>
-    </ThemeProvider>
-  );
+    return (
+        <Router>
+            <CommonHeader user={user} onLogout={() => console.log('Logout')} />
+            <Container>
+                <Routes>
+                    <Route path="/" element={<Login />} />
+                    <Route path="/user-dashboard" element={<UserDashboardContainer />} />
+                    <Route path="/admin-dashboard" element={<AdminDashboardContainer />} />
+                    <Route path="/client-dashboard" element={<ClientDashboardContainer />} />
+                    <Route path="/projects" element={<ProjectList />} />
+                    <Route path="/projects/:id" element={<ProjectDetails />} />
+                    <Route path="/tasks" element={<TaskList />} />
+                    <Route path="/tasks/:id" element={<TaskDetails />} />
+                    <Route path="/users" element={<UserList />} />
+                    <Route path="/create-project" element={<ProjectCreate />} />
+                    <Route path="/create-task" element={<TaskCreate />} />
+                    <Route path="/edit-self" element={<EditSelf />} />
+                </Routes>
+            </Container>
+            <CommonFooter />
+        </Router>
+    );
 }
 
 export default App;
