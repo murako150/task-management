@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button } from '@mui/material';
-import { taskService } from '../../api'; // taskServiceをインポート
+import { projectService,taskService } from '../../api'; // taskServiceをインポート
 
 function TaskList() {
   const [tasks, setTasks] = useState([]);
@@ -8,7 +8,14 @@ function TaskList() {
   const getAllTasks = async () => {
     try {
       const taskList = await taskService.getAllTasks();
-      setTasks(taskList);
+      const tasksWithProjects = await Promise.all(
+        taskList.map(async (task) => {
+          const projectResponse = await projectService.getProjectById(task.project_id);
+          return { ...task, project_name: projectResponse.name };
+        })
+      );
+      setTasks(tasksWithProjects);
+      // setTasks(taskList);
     } catch (error) {
       console.error('タスク取得エラー:', error);
     }
@@ -26,6 +33,7 @@ function TaskList() {
           <TableHead>
             <TableRow>
               <TableCell>タスク名</TableCell>
+              <TableCell>プロジェクト名</TableCell>
               <TableCell>期限</TableCell>
               <TableCell>ステータス</TableCell>
               <TableCell>アクション</TableCell>
@@ -35,6 +43,7 @@ function TaskList() {
             {tasks.map((task) => (
               <TableRow key={task.id}>
                 <TableCell>{task.title}</TableCell>
+                <TableCell>{task.project_name}</TableCell>
                 <TableCell>{task.due_date}</TableCell>
                 <TableCell>{task.status}</TableCell>
                 <TableCell>

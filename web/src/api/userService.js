@@ -28,8 +28,12 @@ const userService = {
 
   getUsersByProject: async (projectId) => {
     return await apiService.get(`projects/${projectId}/users`);
-  }
+  },
 
+    // ユーザーログイン
+  login: async (credentials) => {
+      return await apiService.post('login', credentials);
+  }
 };
 
 export default userService;

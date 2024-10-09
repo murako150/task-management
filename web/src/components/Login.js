@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { TextField, Button, Typography, Container } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { apiService } from '../api';
+import { apiService } from '../api'; 
 
 const Login = () => {
     const [userId, setUserId] = useState(''); // user_idを使用
@@ -13,10 +13,18 @@ const Login = () => {
 
     const handleLogin = async () => {
         try {
-            // APIリクエストを送信
-            const response = await apiService.post('login', { user_id: userId, password:password });
+            // apiServiceのloginメソッドを使用してログイン
+            const response = await apiService.login(userId, password);
             localStorage.setItem('user', JSON.stringify(response)); // ユーザー情報をローカルストレージに保存
-            navigate('/user-dashboard'); // ユーザーダッシュボードへ遷移
+    
+            // ユーザーの役割に応じてダッシュボードへ遷移
+            if (response.role === 'admin') {
+                navigate('/admin-dashboard'); // 管理者ダッシュボードへ遷移
+            } else if (response.role === 'client') {
+                navigate('/client-dashboard'); // クライアントダッシュボードへ遷移
+            } else {
+                navigate('/user-dashboard'); // 一般ユーザーダッシュボードへ遷移
+            }
         } catch (err) {
             setError('ログインに失敗しました。');
         }

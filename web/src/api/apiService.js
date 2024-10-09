@@ -6,6 +6,19 @@ const handleError = async (response) => {
 };
 
 const apiService = {
+  login: async (userId, password) => {
+    const response = await fetch(`${API_BASE_URL}/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ user_id: userId, password }), // ユーザーIDとパスワードをJSON形式で送信
+    });
+    if (!response.ok) {
+      await handleError(response); // エラーハンドリング
+    }
+    return await response.json(); // レスポンスをJSON形式で返す
+  },
   get: async (endpoint) => {
     const user = JSON.parse(localStorage.getItem('user'));
     const response = await fetch(`${API_BASE_URL}/${endpoint}`, {

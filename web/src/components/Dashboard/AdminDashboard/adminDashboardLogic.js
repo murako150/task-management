@@ -8,7 +8,7 @@ export const useAdminDashboardLogic = () => {
 
   const getAllTasks = async () => {
     try {
-      const tasksResponse = await taskService.getAllasks();
+      const tasksResponse = await taskService.getAllTasks();
       setTasks(tasksResponse);
     } catch (error) {
       console.error('タスク取得エラー:', error);
