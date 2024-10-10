@@ -19,7 +19,8 @@ class Task extends Model
         'status', 
         'assigned_to', 
         'due_date',
-        'project_id' // プロジェクトIDを追加
+        'project_id', // プロジェクトIDを追加
+        'parent_id'   // 親タスクのIDを追加
     ];
 
     /**
@@ -52,5 +53,21 @@ class Task extends Model
     public function tags()
     {
         return $this->belongsToMany(Tag::class, 'task_tag'); // タスクとタグの多対多のリレーション
+    }
+
+    /**
+     * タスクの親を取得
+     */
+    public function parent()
+    {
+        return $this->belongsTo(Task::class, 'parent_id'); // 親タスクとの関連
+    }
+
+    /**
+     * タスクの子を取得
+     */
+    public function children()
+    {
+        return $this->hasMany(Task::class, 'parent_id'); // 子タスクとの関連
     }
 }

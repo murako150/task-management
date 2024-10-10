@@ -89,6 +89,31 @@ class TaskController extends Controller
         return response()->json($task, 201);
     }
     
+
+    public function storeSubtask(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'status' => 'required|in:pending,in_progress,completed',
+            'assigned_to' => 'nullable|exists:user_accounts,id',
+            'due_date' => 'required|date',
+            'parent_id' => 'required|exists:tasks,id' // 親タスクのIDを必須とする
+        ]);
+
+        $task = Task::create([
+            'title' => $request->title,
+            'description' => $request->description,
+            'status' => $request->status,
+            'assigned_to' => $request->assigned_to,
+            'due_date' => $request->due_date,
+            'project_id' => $request->project_id, // プロジェクトIDも必要な場合
+            'parent_id' => $request->parent_id // 親タスクIDを設定
+        ]);
+
+        return response()->json($task, 201); // 成功時のレスポンス
+    }
+
     // 既存のタスクを更新
     public function update(Request $request, $id)
     {
