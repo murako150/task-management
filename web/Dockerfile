@@ -9,6 +9,7 @@ COPY package.json ./
 COPY package-lock.json ./
 
 # 依存関係をインストール
+ENV NODE_ENV=production
 RUN npm install
 
 # その他のプロジェクトファイルをコピー

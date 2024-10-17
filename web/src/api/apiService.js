@@ -12,7 +12,7 @@ const apiService = {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ user_id: userId, password }), // ユーザーIDとパスワードをJSON形式で送信
+      body: JSON.stringify({ user_id: userId, password:password }), // ユーザーIDとパスワードをJSON形式で送信
     });
     if (!response.ok) {
       await handleError(response); // エラーハンドリング

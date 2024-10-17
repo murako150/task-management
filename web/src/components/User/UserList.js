@@ -5,9 +5,9 @@ import { userService } from '../../api'; // userServiceをインポート
 function UserList() {
   const [users, setUsers] = useState([]);
 
-  const fetchUsers = async () => {
+  const getAllUsers = async () => {
     try {
-      const userList = await userService.fetchUsers();
+      const userList = await userService.getAllUsers();
       setUsers(userList);
     } catch (error) {
       console.error('ユーザー取得エラー:', error);
@@ -15,7 +15,7 @@ function UserList() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    getAllUsers();
   }, []);
 
   return (
@@ -40,7 +40,7 @@ function UserList() {
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{user.role}</TableCell>
                 <TableCell>
-                  <Button variant="contained" color="primary" href={`/users/${user.id}/edit`}>編集</Button>
+                  <Button variant="contained" color="primary" href={`/users/${user.id}`}>編集</Button>
                   <Button variant="contained" color="secondary" style={{ marginLeft: '10px' }}>削除</Button>
                 </TableCell>
               </TableRow>
